@@ -7,3 +7,4 @@ APIs -
  3) Mark as done a Habit - http://localhost:8080/habits/:id/mark
  4) Get a Habit - http://localhost:8080/habits/:id
  5) Delete a Habit - http://localhost:8080/habits/:id
+ 6) Update(PUT) a Habit - http://localhost:8080/habits?id={id}

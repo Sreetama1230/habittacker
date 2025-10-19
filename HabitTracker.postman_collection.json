@@ -27,9 +27,112 @@
 			"response": []
 		},
 		{
+			"name": "create habit",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"name\":\"study\",\n    \"notes\":\"focus time\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8080/habits",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"habits"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "update habit",
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"name\":\"eat on time\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8080/habits?id=8",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"habits"
+					],
+					"query": [
+						{
+							"key": "id",
+							"value": "8"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "mark today",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/habits/8/mark",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"habits",
+						"8",
+						"mark"
+					]
+				}
+			},
+			"response": []
+		},
+		{
 			"name": "get habit",
 			"request": {
 				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/habits/8",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"habits",
+						"8"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "delete habit",
+			"request": {
+				"method": "DELETE",
 				"header": [],
 				"url": {
 					"raw": "http://localhost:8080/habits/4",
