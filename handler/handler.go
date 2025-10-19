@@ -11,7 +11,7 @@ import (
 	"main.go/model"
 )
 
-type createHabitRequest struct {
+type habitRequest struct {
 	Name  string `json:"name" binding:"required"`
 	Notes string `json:"notes,omitempty"`
 }
@@ -26,7 +26,7 @@ type habitResponse struct {
 }
 
 func CreateHabit(c *gin.Context) {
-	var req createHabitRequest
+	var req habitRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "name is required"})
 		return
@@ -84,6 +84,39 @@ func ListHabits(c *gin.Context) {
 
 }
 
+func GetHabit(c *gin.Context) {
+	idParam := c.Param("id")
+	id, err := strconv.ParseUint(idParam, 10, 64)
+	if err != nil || id == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
+		return
+	}
+	var h model.Habit
+
+	if err := db.DB.Find(&h, id).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "habit not found"})
+		return
+	}
+
+	var marks []model.Mark
+	db.DB.Where("habit_id = ?", h.ID).Order("date asc").Find(&marks)
+
+	dates := make([]string, 0, len(marks))
+	for _, m := range marks {
+		dates = append(dates, m.Date)
+	}
+	res := habitResponse{
+		ID:        h.ID,
+		Name:      h.Name,
+		Notes:     h.Notes,
+		CreatedAt: h.CreatedAt.Format(time.RFC3339),
+		DoneCount: int64(len(dates)),
+		Dates:     dates,
+	}
+
+	c.JSON(http.StatusOK, res)
+}
+
 func MarkToday(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil || id <= 0 {
@@ -99,7 +132,7 @@ func MarkToday(c *gin.Context) {
 	today := time.Now().Format("2006-01-02")
 	var exisiting model.Mark
 	if err := db.DB.Where("habit_id = ? and date = ?", habit.ID, today).First(&exisiting).Error; err == nil {
-		c.JSON(http.StatusOK, gin.H{"status": "already marked ", "date": today, "error": err})
+		c.JSON(http.StatusOK, gin.H{"status": "already marked", "date": today, "error": err})
 		return
 	}
 	if err := db.DB.Create(&model.Mark{HabitID: habit.ID, Date: today}).Error; err != nil {
@@ -109,40 +142,6 @@ func MarkToday(c *gin.Context) {
 
 	c.JSON(http.StatusCreated, gin.H{"status": "marked", "date": today})
 
-}
-
-func GetHabit(c *gin.Context) {
-	idParam := c.Param("id")
-	id, err := strconv.ParseUint(idParam, 10, 64)
-	if err != nil || id == 0 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
-		return
-	}
-	var habit model.Habit
-
-	if err := db.DB.Find(&habit, id).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "habit not found"})
-		return
-	}
-
-	var marks []model.Mark
-
-	db.DB.Where("habit_id = ?", habit.ID).Order("data asc").Find(&marks)
-
-	dates := make([]string, 0, len(marks))
-	for _, m := range marks {
-		dates = append(dates, m.Date)
-	}
-
-	resp := habitResponse{
-		ID:        habit.ID,
-		Name:      habit.Name,
-		Notes:     habit.Notes,
-		CreatedAt: habit.CreatedAt.Format(time.RFC3339),
-		DoneCount: int64(len(dates)),
-		Dates:     dates,
-	}
-	c.JSON(http.StatusOK, resp)
 }
 
 func DeleteHabit(c *gin.Context) {
@@ -174,4 +173,52 @@ func DeleteHabit(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"id": deletedHabit.ID})
+}
+
+// habits?id=<id>
+func UpdateHabit(c *gin.Context) {
+
+	givenId := c.Query("id")
+	id, err := strconv.Atoi(givenId)
+	if err != nil || id <= 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id is provided"})
+		return
+	}
+
+	var updateHabitRequest habitRequest
+
+	if er := c.ShouldBindJSON(&updateHabitRequest); er != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
+		return
+	}
+
+	var habit model.Habit
+	if er := db.DB.First(&habit, id).Error; er != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "failed to fetch the habit"})
+		return
+	}
+	habit.Notes = updateHabitRequest.Notes
+	habit.Name = updateHabitRequest.Name
+	if er := db.DB.Save(&habit).Error; er != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update the data"})
+		return
+	}
+	var marks []model.Mark
+	db.DB.Where("habit_id = ?", habit.ID).Order("date asc").Find(&marks)
+
+	dates := make([]string, 0, len(marks))
+	for _, m := range marks {
+		dates = append(dates, m.Date)
+	}
+
+	resp := habitResponse{
+		ID:        habit.ID,
+		Name:      habit.Name,
+		Notes:     habit.Notes,
+		Dates:     dates,
+		CreatedAt: habit.CreatedAt.Format(time.RFC3339),
+		DoneCount: int64(len(dates)),
+	}
+	c.JSON(http.StatusOK, resp)
+
 }

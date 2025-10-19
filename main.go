@@ -16,6 +16,7 @@ func main() {
 	r.GET("/habits", handler.ListHabits)
 	r.GET("/habits/:id", handler.GetHabit)
 	r.DELETE("/habits/:id", handler.DeleteHabit)
+	r.PUT("/habits", handler.UpdateHabit)
 
 	log.Println("running on 8080")
 	if err := r.Run(":8080"); err != nil {
